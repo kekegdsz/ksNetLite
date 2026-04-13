@@ -22,12 +22,12 @@ Android 弱网测试工具，支持浮窗一键切换弱网场景，适合功能
 ## APK 下载
 
 - 本地 Debug 安装包：`./apk/ksnetlite-debug.apk`
-- GitHub Release 下载地址（请替换为你的仓库）：
-  `https://github.com/kekegdsz/ksNetLite/releases/latest/download/ksnetlite-debug.apk`
+- GitHub 下载地址：
+  `https://github.com/kekegdsz/ksNetLite/blob/main/apk/ksnetlite-debug.apk`
 
 ## 下载二维码
 
-> 当前二维码指向上面的模板下载地址，请把 `kekegdsz/ksNetLite` 替换后按需重新生成二维码。
+> 当前二维码对应上面的 APK 下载地址。
 
 ![KsNetLite APK 下载二维码](./apk/download-qr.png)
 
