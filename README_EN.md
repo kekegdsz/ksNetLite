@@ -22,14 +22,8 @@ KsNetLite is an Android weak-network testing tool with a fast floating control p
 ## APK Download
 
 - Local debug APK: `./apk/ksnetlite-debug.apk`
-- GitHub download URL:
-  `https://github.com/kekegdsz/ksNetLite/blob/main/apk/ksnetlite-debug.apk`
-
-## Download QR Code
-
-> The QR code corresponds to the APK download URL above.
-
-![KsNetLite APK Download QR](./apk/download-qr.png)
+- **Download (highlight):**  
+  **[`https://github.com/kekegdsz/ksNetLite/blob/main/apk/ksnetlite-debug.apk`](https://github.com/kekegdsz/ksNetLite/blob/main/apk/ksnetlite-debug.apk)**
 
 ## Build & Install
 
