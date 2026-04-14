@@ -25,21 +25,11 @@ Android 弱网测试工具，支持浮窗一键切换弱网场景，适合功能
 - **高亮下载地址：**  
   **[`https://github.com/kekegdsz/ksNetLite/blob/main/apk/ksnetlite-debug.apk`](https://github.com/kekegdsz/ksNetLite/blob/main/apk/ksnetlite-debug.apk)**
 
-## 构建安装
+## 演示截图
 
-```bash
-./gradlew installDebug
-```
+首页列表与浮窗联动演示：
 
-## 打包 Release
-
-```bash
-./gradlew assembleRelease
-```
-
-APK 位置：
-
-`app/build/outputs/apk/release/app-release-unsigned.apk`
+![首页和浮窗演示](./docs/images/home-overlay-demo.png)
 
 ## 当前架构
 

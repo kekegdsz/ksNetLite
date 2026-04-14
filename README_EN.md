@@ -25,21 +25,11 @@ KsNetLite is an Android weak-network testing tool with a fast floating control p
 - **Download (highlight):**  
   **[`https://github.com/kekegdsz/ksNetLite/blob/main/apk/ksnetlite-debug.apk`](https://github.com/kekegdsz/ksNetLite/blob/main/apk/ksnetlite-debug.apk)**
 
-## Build & Install
+## Demo Screenshot
 
-```bash
-./gradlew installDebug
-```
+Home list and floating overlay in one view:
 
-## Build Release
-
-```bash
-./gradlew assembleRelease
-```
-
-Output APK:
-
-`app/build/outputs/apk/release/app-release-unsigned.apk`
+![Home and overlay demo](./docs/images/home-overlay-demo.png)
 
 ## Current Architecture
 
