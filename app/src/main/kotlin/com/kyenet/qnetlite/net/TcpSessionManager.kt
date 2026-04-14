@@ -9,6 +9,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -21,6 +23,8 @@ internal class TcpSessionManager(
     private val ruleEngine: RuleEngine,
     private val trafficShaper: TrafficShaper,
     private val profileProvider: () -> NetworkProfile,
+    private val socksHost: String,
+    private val socksPort: Int,
     private val sendToTun: suspend (ByteArray) -> Unit
 ) {
     private data class SessionKey(
@@ -65,7 +69,8 @@ internal class TcpSessionManager(
                 vpnService.protect(socket)
                 socket.tcpNoDelay = true
                 socket.keepAlive = true
-                socket.connect(InetSocketAddress(key.remoteIp, key.remotePort), 8_000)
+                socket.connect(InetSocketAddress(socksHost, socksPort), 8_000)
+                establishSocks5Tunnel(socket, key.remoteIp, key.remotePort)
                 val initialServerSeq = Random.nextInt(1, Int.MAX_VALUE).toLong()
                 val session = Session(
                     key = key,
@@ -220,6 +225,50 @@ internal class TcpSessionManager(
         session.closed = true
         runCatching { session.readJob.cancel() }
         runCatching { session.socket.close() }
+    }
+
+    private fun establishSocks5Tunnel(socket: Socket, remoteIp: InetAddress, remotePort: Int) {
+        val input = DataInputStream(BufferedInputStream(socket.getInputStream()))
+        val output = DataOutputStream(BufferedOutputStream(socket.getOutputStream()))
+
+        // Greeting: SOCKS5, 1 auth method, no-auth
+        output.write(byteArrayOf(0x05, 0x01, 0x00))
+        output.flush()
+        val greetingResp = ByteArray(2)
+        input.readFully(greetingResp)
+        check(greetingResp[0].toInt() == 0x05 && greetingResp[1].toInt() == 0x00) {
+            "SOCKS5 no-auth rejected"
+        }
+
+        // CONNECT command
+        val ip = remoteIp.address
+        val request = ByteArray(10)
+        request[0] = 0x05
+        request[1] = 0x01 // CONNECT
+        request[2] = 0x00
+        request[3] = 0x01 // IPv4
+        System.arraycopy(ip, 0, request, 4, 4)
+        request[8] = ((remotePort shr 8) and 0xFF).toByte()
+        request[9] = (remotePort and 0xFF).toByte()
+        output.write(request)
+        output.flush()
+
+        // Reply: VER REP RSV ATYP BND.ADDR BND.PORT
+        val header = ByteArray(4)
+        input.readFully(header)
+        check(header[0].toInt() == 0x05 && header[1].toInt() == 0x00) {
+            "SOCKS5 CONNECT failed, rep=${header[1].toInt() and 0xFF}"
+        }
+
+        val atyp = header[3].toInt() and 0xFF
+        val addrLen = when (atyp) {
+            0x01 -> 4
+            0x03 -> input.readUnsignedByte()
+            0x04 -> 16
+            else -> throw IllegalStateException("Unknown SOCKS5 ATYP $atyp")
+        }
+        val rest = ByteArray(addrLen + 2)
+        input.readFully(rest)
     }
 
     companion object {

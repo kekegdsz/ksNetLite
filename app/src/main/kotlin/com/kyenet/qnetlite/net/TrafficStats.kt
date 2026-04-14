@@ -14,16 +14,20 @@ object StatsStore {
     private val _stats = MutableStateFlow(TrafficStats())
     val stats: StateFlow<TrafficStats> = _stats.asStateFlow()
 
+    fun onPacketObserved() {
+        _stats.value = _stats.value.copy(
+            totalPackets = _stats.value.totalPackets + 1
+        )
+    }
+
     fun onPacketDropped() {
         _stats.value = _stats.value.copy(
-            totalPackets = _stats.value.totalPackets + 1,
             droppedPackets = _stats.value.droppedPackets + 1
         )
     }
 
     fun onPacketForwarded(bytes: Int) {
         _stats.value = _stats.value.copy(
-            totalPackets = _stats.value.totalPackets + 1,
             shapedBytes = _stats.value.shapedBytes + bytes
         )
     }

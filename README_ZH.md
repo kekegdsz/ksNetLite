@@ -19,6 +19,12 @@ Android 弱网测试工具，支持浮窗一键切换弱网场景，适合功能
 - 参数持久化保存
 - 基于 `VpnService` 的弱网控制入口
 
+## 代理模式说明
+
+- 当前支持通过 SOCKS5 代理进行真实转发链路（用于非 Root 场景）
+- 默认代理地址：`183.56.251.215:1080`
+- 若代理不可达，弱网效果会退化或不可用，建议优先检查代理连通性
+
 ## APK 下载
 
 - 本地 Debug 安装包：`./apk/ksnetlite-debug.apk`
@@ -38,6 +44,7 @@ Android 弱网测试工具，支持浮窗一键切换弱网场景，适合功能
 - `OverlayService`：浮窗交互入口
 - `RuleEngine`：丢包判定与延迟计算
 - `TrafficShaper`：带宽整形
+- `TcpSessionManager` / `UdpProxy`：代理转发处理
 - `ProfileStore` / `StatsStore` / `ServiceStateStore`：状态管理
 
 ## 适用场景

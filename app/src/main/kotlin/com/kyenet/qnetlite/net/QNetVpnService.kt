@@ -104,6 +104,8 @@ class KsNetVpnService : VpnService() {
             ruleEngine = ruleEngine,
             trafficShaper = trafficShaper,
             profileProvider = { ProfileStore.profile.value },
+            socksHost = SOCKS5_HOST,
+            socksPort = SOCKS5_PORT,
             sendToTun = { packet -> writeToTun(packet) }
         )
         udpProxy = UdpProxy(
@@ -128,6 +130,7 @@ class KsNetVpnService : VpnService() {
                         break
                     }
                     if (len <= 0) continue
+                    StatsStore.onPacketObserved()
                     val packet = PacketParser.parse(buffer, len)
                     when (packet) {
                         is PacketParser.ParsedPacket.Tcp -> {
@@ -268,5 +271,7 @@ class KsNetVpnService : VpnService() {
         const val ACTION_STOP = "com.kyenet.ksnetlite.action.STOP_VPN"
         private const val CHANNEL_ID = "ksnetlite_vpn"
         private const val NOTIFICATION_ID = 1001
+        private const val SOCKS5_HOST = "183.56.251.215"
+        private const val SOCKS5_PORT = 1080
     }
 }
