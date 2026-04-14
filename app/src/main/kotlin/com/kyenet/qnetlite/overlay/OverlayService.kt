@@ -113,12 +113,25 @@ class OverlayService : Service() {
         addEqualButton(row4, latencyMinus)
         addEqualButton(row4, latencyPlus)
 
+        val row5 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        val jitterMinus = quickButton("抖-20")
+        val jitterPlus = quickButton("抖+20")
+        val bandwidthMinus = quickButton("速-10")
+        val bandwidthPlus = quickButton("速+10")
+        addEqualButton(row5, jitterMinus)
+        addEqualButton(row5, jitterPlus)
+        addEqualButton(row5, bandwidthMinus)
+        addEqualButton(row5, bandwidthPlus)
+
         panel.addView(dragBar)
         panel.addView(statusView)
         panel.addView(row1)
         panel.addView(row2)
         panel.addView(row3)
         panel.addView(row4)
+        panel.addView(row5)
 
         val layoutParams = WindowManager.LayoutParams(
             ((resources.displayMetrics.widthPixels * 0.92f).roundToInt()),
@@ -148,6 +161,7 @@ class OverlayService : Service() {
             row2.visibility = if (panelExpanded) View.VISIBLE else View.GONE
             row3.visibility = if (panelExpanded) View.VISIBLE else View.GONE
             row4.visibility = if (panelExpanded) View.VISIBLE else View.GONE
+            row5.visibility = if (panelExpanded) View.VISIBLE else View.GONE
             collapseButton.text = if (panelExpanded) "折叠" else "展开"
         }
 
@@ -158,39 +172,38 @@ class OverlayService : Service() {
         }
         offline.setOnClickListener {
             resetClickTimer()
-            applyProfile(PresetProfile.OFFLINE.profile)
-            ensureVpnRunning()
+            applyProfileWithRuntimeTransition(PresetProfile.OFFLINE.profile, shouldRunVpn = true)
         }
         loss30.setOnClickListener {
             resetClickTimer()
-            applyProfile(ProfileStore.profile.value.copy(packetLossPercent = 30))
-            ensureVpnRunning()
+            applyProfileWithRuntimeTransition(
+                ProfileStore.profile.value.copy(packetLossPercent = 30),
+                shouldRunVpn = true
+            )
         }
         loss60.setOnClickListener {
             resetClickTimer()
-            applyProfile(ProfileStore.profile.value.copy(packetLossPercent = 60))
-            ensureVpnRunning()
+            applyProfileWithRuntimeTransition(
+                ProfileStore.profile.value.copy(packetLossPercent = 60),
+                shouldRunVpn = true
+            )
         }
 
         fourG.setOnClickListener {
             resetClickTimer()
-            applyProfile(PresetProfile.FOUR_G.profile)
-            ensureVpnRunning()
+            applyProfileWithRuntimeTransition(PresetProfile.FOUR_G.profile, shouldRunVpn = true)
         }
         threeG.setOnClickListener {
             resetClickTimer()
-            applyProfile(PresetProfile.THREE_G.profile)
-            ensureVpnRunning()
+            applyProfileWithRuntimeTransition(PresetProfile.THREE_G.profile, shouldRunVpn = true)
         }
         twoG.setOnClickListener {
             resetClickTimer()
-            applyProfile(PresetProfile.TWO_G.profile)
-            ensureVpnRunning()
+            applyProfileWithRuntimeTransition(PresetProfile.TWO_G.profile, shouldRunVpn = true)
         }
         bad.setOnClickListener {
             resetClickTimer()
-            applyProfile(PresetProfile.BAD_NETWORK.profile)
-            ensureVpnRunning()
+            applyProfileWithRuntimeTransition(PresetProfile.BAD_NETWORK.profile, shouldRunVpn = true)
         }
 
         lossMinus.setOnClickListener {
@@ -208,6 +221,22 @@ class OverlayService : Service() {
         latencyPlus.setOnClickListener {
             resetClickTimer()
             adjust(latencyDelta = 50)
+        }
+        jitterMinus.setOnClickListener {
+            resetClickTimer()
+            adjust(jitterDelta = -20)
+        }
+        jitterPlus.setOnClickListener {
+            resetClickTimer()
+            adjust(jitterDelta = 20)
+        }
+        bandwidthMinus.setOnClickListener {
+            resetClickTimer()
+            adjust(bandwidthDelta = -10)
+        }
+        bandwidthPlus.setOnClickListener {
+            resetClickTimer()
+            adjust(bandwidthDelta = 10)
         }
 
         windowManager.addView(panel, layoutParams)
@@ -230,11 +259,40 @@ class OverlayService : Service() {
         ProfileStore.persist(this)
     }
 
-    private fun adjust(lossDelta: Int = 0, latencyDelta: Int = 0) {
+    private fun applyProfileWithRuntimeTransition(
+        profile: NetworkProfile,
+        shouldRunVpn: Boolean
+    ) {
+        val previous = ProfileStore.profile.value
+        applyProfile(profile)
+
+        if (!shouldRunVpn) {
+            stopVpnService()
+            return
+        }
+
+        val wasOffline = previous.packetLossPercent >= 100
+        val nowOffline = profile.packetLossPercent >= 100
+        if (wasOffline && !nowOffline && ServiceStateStore.vpnRunning.value) {
+            restartVpnService()
+            return
+        }
+
+        ensureVpnRunning()
+    }
+
+    private fun adjust(
+        lossDelta: Int = 0,
+        latencyDelta: Int = 0,
+        jitterDelta: Int = 0,
+        bandwidthDelta: Int = 0
+    ) {
         val p = ProfileStore.profile.value
         val next = p.copy(
             packetLossPercent = (p.packetLossPercent + lossDelta).coerceIn(0, 100),
-            latencyMs = (p.latencyMs + latencyDelta).coerceAtLeast(0)
+            latencyMs = (p.latencyMs + latencyDelta).coerceAtLeast(0),
+            jitterMs = (p.jitterMs + jitterDelta).coerceAtLeast(0),
+            bandwidthKbps = (p.bandwidthKbps + bandwidthDelta).coerceAtLeast(0)
         )
         applyProfile(next)
     }
@@ -286,6 +344,14 @@ class OverlayService : Service() {
         startService(intent)
         stopService(Intent(this, KsNetVpnService::class.java))
         ServiceStateStore.setRunning(false)
+    }
+
+    private fun restartVpnService() {
+        stopVpnService()
+        scope.launch {
+            delay(150)
+            startVpnService()
+        }
     }
 
     private fun ensureVpnRunning() {
