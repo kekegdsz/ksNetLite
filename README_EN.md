@@ -19,6 +19,12 @@ KsNetLite is an Android weak-network testing tool with a fast floating control p
 - Persistent profile storage
 - `VpnService` based traffic control entrypoint
 
+## Proxy Mode
+
+- Supports SOCKS5-based forwarding for non-root real traffic interception.
+- Current default SOCKS5 endpoint: `183.56.251.215:1080`.
+- If proxy is unreachable, weak-network behavior may degrade.
+
 ## APK Download
 
 - Local debug APK: `./apk/ksnetlite-debug.apk`
@@ -38,6 +44,7 @@ Home list and floating overlay in one view:
 - `OverlayService`: floating quick-action controller
 - `RuleEngine`: packet drop + latency logic
 - `TrafficShaper`: bandwidth shaping
+- `TcpSessionManager` / `UdpProxy`: proxy forwarding path
 - `ProfileStore` / `StatsStore` / `ServiceStateStore`: runtime state
 
 ## Use Cases
